@@ -1,0 +1,34 @@
+ #!/bin/sh
+# PROVIDE: rdrand
+# REQUIRE: netif FILESYSTEMS
+# KEYWORD: nojail
+. /etc/rc.subr
+[ -f /etc/asyncos.conf ]  && . /etc/asyncos.conf
+[ -f /etc/phoebe.conf ]  && . /etc/phoebe.conf
+name="rdrand"
+stop_cmd="rdrand_stop"
+start_cmd="rdrand_start"
+pidfile="/var/run/${name}.pid"
+rdrandseed_command="/usr/local/bin/rdrandseed.sh"
+rdrand_start()
+{
+	if [ "$PLATFORM" =  "vmware" ]
+        then
+		/usr/local/sbin/testrdrand	
+		if [ "$?" -eq "1" ]
+ 		then
+       			/usr/local/sbin/rdrand_engine
+			/usr/sbin/daemon -P ${pidfile} -r -f ${rdrandseed_command}
+		fi	
+        fi
+}
+rdrand_stop()
+{
+        if [ -e "${pidfile}" ]; then
+                kill -s TERM `cat ${pidfile}`
+        else
+                echo "${name} is not running"
+        fi
+}
+load_rc_config $name
+run_rc_command "$1"
